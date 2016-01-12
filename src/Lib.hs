@@ -1,33 +1,39 @@
-{-# LANGUAGE DataKinds       #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeOperators   #-}
+{-# LANGUAGE DataKinds     #-}
+{-# LANGUAGE TypeOperators #-}
 module Lib
     ( startApp
     ) where
 
-import           Data.Aeson
-import           Data.Aeson.TH
+import           Config                      (Config (..), Environment (..),
+                                              defaultConfig, makePool,
+                                              setLogger)
+import           Database.Persist.Postgresql (runSqlPool)
+import           Models
 import           Network.Wai
-import           Network.Wai.Handler.Warp
+import           Network.Wai.Handler.Warp    (run)
 import           Servant
-
-data User = User
-  { userId        :: Int
-  , userFirstName :: String
-  , userLastName  :: String
-  } deriving (Eq, Show)
-
--- Generates both 'ToJSON' and 'FromJSON' instance declarations for the given
--- data type
-$(deriveJSON defaultOptions ''User)
+import           System.Environment          (lookupEnv)
 
 type API = "users" :> Get '[JSON] [User]
 
-startApp :: IO ()
-startApp = run 8080 app
+lookupSetting :: Read a => String -> a -> IO a
+lookupSetting env def = do
+    p <- lookupEnv env
+    return $ case p of Nothing -> def
+                       Just a  -> read a
 
-app :: Application
-app = serve api server
+startApp :: IO ()
+startApp = do
+    env  <- lookupSetting "ENV" Development
+    port <- lookupSetting "PORT" 8081
+    pool <- makePool env
+    let cfg = defaultConfig { getPool = pool, getEnv = env }
+        logger = setLogger env
+    runSqlPool doMigrations pool
+    run port $ logger $ app cfg
+
+app :: Config -> Application
+app c = serve api server
 
 api :: Proxy API
 api = Proxy
@@ -36,6 +42,6 @@ server :: Server API
 server = return users
 
 users :: [User]
-users = [ User 1 "Isaac" "Newton"
-        , User 2 "Albert" "Einstein"
+users = [ User 1 "Isaac" "Newton" "isaac@cambridge.uk"
+        , User 2 "Albert" "Einstein" "albert@mit.edu"
         ]
