@@ -5,11 +5,11 @@ module Lib
     ( startApp
     ) where
 
-import Data.Aeson
-import Data.Aeson.TH
-import Network.Wai
-import Network.Wai.Handler.Warp
-import Servant
+import           Data.Aeson
+import           Data.Aeson.TH
+import           Network.Wai
+import           Network.Wai.Handler.Warp
+import           Servant
 
 data User = User
   { userId        :: Int
@@ -17,6 +17,8 @@ data User = User
   , userLastName  :: String
   } deriving (Eq, Show)
 
+-- Generates both 'ToJSON' and 'FromJSON' instance declarations for the given
+-- data type
 $(deriveJSON defaultOptions ''User)
 
 type API = "users" :> Get '[JSON] [User]
