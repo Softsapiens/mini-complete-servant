@@ -32,18 +32,3 @@ startApp = do
         logger = setLogger env
     runSqlPool doMigrations pool
     run port $ logger $ app cfg
-{-
-app :: Config -> Application
-app c = serve api server
-
-api :: Proxy API
-api = Proxy
-
-server :: Server API
-server = return users
-
-users :: [User]
-users = [ User 1 "Isaac" "Newton" "isaac@cambridge.uk"
-        , User 2 "Albert" "Einstein" "albert@mit.edu"
-        ]
--}
