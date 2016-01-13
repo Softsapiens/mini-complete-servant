@@ -21,13 +21,17 @@ library
                      , Api
   build-depends:       base >= 4.7 && < 5
                      , aeson
+                     , bytestring
                      , servant
                      , servant-server
+                     , text
                      , wai
                      , wai-extra
                      , warp
                      , mtl
+                     , transformers
                      , either
+                     , http-types
                      , monad-logger >= 0.3 && < 0.4
                      , persistent >= 2.1 && < 2.3
                      , persistent-postgresql >= 2.1 && < 2.3

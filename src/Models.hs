@@ -14,7 +14,9 @@ module Models where
 
 import           Config
 import           Control.Monad.Reader        (ReaderT, asks, liftIO)
+import           Data.Aeson                  (ToJSON)
 import           Data.Aeson.TH               (defaultOptions, deriveJSON)
+import           Data.Text
 import           Database.Persist.Postgresql (SqlBackend (..), runMigration,
                                               runSqlPool)
 import           Database.Persist.TH         (mkMigrate, mkPersist,
@@ -55,3 +57,8 @@ usersToUser Users{..} = User { ident = usersIdent
                              , firstName = usersFirstName
                              , lastName = usersLastName
                              , email = usersEmail }
+
+newtype PublicData = PublicData { somedata :: Text }
+  deriving (Eq, Show, Generic)
+
+instance ToJSON PublicData

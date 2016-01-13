@@ -9,9 +9,17 @@ flags: {}
 # Local packages, usually specified by relative directory name
 packages:
 - '.'
+- location:
+    git: git@github.com:haskell-servant/servant.git
+    commit: 357cc839b65601975cb186a3f00a729f7f3bb2de
+  subdirs:
+  - servant
+  - servant-server
 
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
-extra-deps: []
+extra-deps:
+#- servant-5.0
+#- servant-server-5.0
 
 # Extra package databases containing global packages
 extra-package-dbs: []
