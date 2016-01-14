@@ -8,8 +8,12 @@ This project is based on:
 - https://github.com/parsonsmatt/servant-persistent
 - https://github.com/haskell-servant/HaskellSGMeetup2015/blob/master/examples/authentication-combinator/AuthenticationCombinator.hs
 
-## The API:
+## API:
 
+Public endpoints:
+- GET `/description`returns a simple public text data.
+
+Private (authorization required) endpoints:
 - GET `/users` returns a list of all users in the database
 - GET `/users/:email` returns the first user whose name is `:email`, and returns 404 if the user doesn't show up.
 - POST `/users` with JSON like `{ "ident": "Int", "firstName": "String", "lastName": "String", "email": "String" }` to create a User.
@@ -47,15 +51,29 @@ Check the installation
 
 ### Tests
 
-#### create a new user
-$ curl --verbose --request POST --header "Content-Type: application/json" \
+#### Get public description
+`curl --verbose --request GET --header "Content-Type: application/json" \
+ 	http://localhost:8081/description`
+
+#### Create a new user
+`curl --verbose --request POST -H "Cookie: good password" --header "Content-Type: application/json" \
     --data '{"ident": 1, "firstName": "Albert", "lastName": "Einstein", "email": "albert@mit.edu"}' \
-	 http://localhost:8081/users
+	 http://localhost:8081/users`
 
-#### get all users in database
-$ curl --verbose --request GET --header "Content-Type: application/json" \
- 	http://localhost:8081/users
+#### Get all users in database
+`curl --verbose --request GET -H "Cookie: good password" --header "Content-Type: application/json"
+ 	http://localhost:8081/users`
 
-#### get certain user in database
-$ curl --verbose --request GET --header "Content-Type: application/json" \
-  http://localhost:8081/users/albert@mit.edu
+#### Get certain user in database
+`curl --verbose --request GET -H "Cookie: good password" --header "Content-Type: application/json"
+  http://localhost:8081/users/albert@mit.edu`
+
+#### Accessing without the password cookie
+`curl --verbose --request GET --header "Content-Type: application/json"
+ 	http://localhost:8081/users`
+returns "Missing auth header" and http 401 unauthorized code.
+
+#### Accessing with an incorrect password
+`curl --verbose --request GET -H "Cookie: bad password" --header "Content-Type: application/json"
+ 	http://localhost:8081/users`
+returns "Invalid cookie" and http 403 forbidden.

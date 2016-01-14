@@ -9,8 +9,7 @@ module Api where
 
 import           Config                      (Config (..))
 import           Control.Monad.Reader        (ReaderT, lift, runReaderT)
-import           Control.Monad.Trans.Either  (EitherT, left)
-import           Control.Monad.Trans.Except  (ExceptT)
+import           Control.Monad.Trans.Except  (ExceptT, throwE)
 import           Data.ByteString             (ByteString)
 import           Data.Int                    (Int64)
 import           Database.Persist.Postgresql (Entity (..), fromSqlKey, insert,
@@ -44,19 +43,12 @@ instance HasServer rest => HasServer (AuthProtected :> rest) where
                 then return $ Route ()
                 else return $ FailFatal err403 { errBody = "Invalid cookie" }
 
-type UserAPI =
-         "users" :> Get '[JSON] [User]
-    :<|> "users" :> Capture "email" String :> Get '[JSON] User
-    :<|> "users" :> ReqBody '[JSON] User :> Post '[JSON] Int64
+type AppM = ReaderT Config (ExceptT ServantErr IO)
 
-type AppM = ReaderT Config (EitherT ServantErr IO)
-
-type PrivateAPI = UserAPI
-
-type PublicAPI = "description" :> Get '[JSON] [PublicData]
-
-type TheAPI = AuthProtected :> PrivateAPI
-              :<|> PublicAPI
+type TheAPI = AuthProtected :> "users" :> Get '[JSON] [User]
+              :<|> AuthProtected :> "users" :> Capture "email" String :> Get '[JSON] User
+              :<|> AuthProtected :> "users" :> ReqBody '[JSON] User :> Post '[JSON] Int64
+              :<|> "description" :> Get '[JSON] [PublicData]
 
 api :: Proxy TheAPI
 api = Proxy
@@ -64,16 +56,16 @@ api = Proxy
 readerServer :: Config -> Server TheAPI
 readerServer cfg = enter (readerToEither cfg) server
 
-app :: Config -> Application
-app cfg = serve api (readerServer cfg)
-
--- Handlers
-
-readerToEither :: Config -> AppM :~> EitherT ServantErr IO
+readerToEither :: Config -> AppM :~> ExceptT ServantErr IO
 readerToEither cfg = Nat $ \x -> runReaderT x cfg
 
 server :: ServerT TheAPI AppM
 server = allUsers :<|> singleUser :<|> createUser :<|> publicData
+
+app :: Config -> Application
+app cfg = serve api (readerServer cfg)
+
+-- Handlers
 
 publicData :: AppM [PublicData]
 publicData = return [PublicData "this is a public piece of data"]
@@ -89,7 +81,7 @@ singleUser str = do
     users <- runDb $ selectList [UsersEmail ==. str] []
     let list = map (\(Entity _ y) -> usersToUser y) users
     case list of
-         []     -> lift $ left err404
+         []     -> lift $ throwE err404
          (x:xs) -> return x
 
 createUser :: User -> AppM Int64
